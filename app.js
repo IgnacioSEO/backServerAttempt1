@@ -36,17 +36,17 @@ app.get("/ping", (req, res) => {
   return res.status(200).json({ message: "pong" });
 });
 app.post("/users", async (req, res) => {
-  const { name, email, profile_image, password } = req.body;
+  const { name, email, profileImage, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
   await appDataSource.query(
     `INSERT INTO users(
       name,
       email,
-      profile_image,
+      profileImage,
       password
     ) VALUES (?, ?, ?, ?);
     `,
-    [name, email, profile_image, hashedPassword]
+    [name, email, profileImage, hashedPassword]
   );
   return res.status(201).json({ message: "userCreated" });
 });
@@ -57,7 +57,7 @@ app.post("/posts", async (req, res) => {
     `INSERT INTO posts(
       title,
       content,
-      user_id
+      userId
     ) VALUES (?, ?, ?);
     `,
     [title, content, userId]
@@ -69,12 +69,12 @@ app.get("/posts", async (req, res) => {
   const posts = await appDataSource.query(
     `SELECT(
     users.id AS userId,
-    users.profile_image AS userProfileImage,
+    users.profileImage AS userProfileImage,
     posts.id AS postingId,
-    posts.content_image AS postingImageUrl,
+    posts.contentImage AS postingImageUrl,
     posts.content AS postingContent
     FROM users
-    INNER JOIN posts ON users.id = posts.user_id
+    INNER JOIN posts ON users.id = posts.userId
   )`
   );
   return res.status(200).json({ data: posts });
@@ -85,12 +85,12 @@ app.get("/posts/:userId", async (req, res) => {
   const [result] = await appDateSource.query(
     `SELECT(
     users.id AS userId,
-    users.profile_image AS userProfileImage,
+    users.profileImage AS userProfileImage,
     post.postings
     FROM users 
     LEFT JOIN(
       SELECT
-    user_id,
+    userId,
     JSON_ARRAYAGG(
       JSON_OBJECT(
         "postingId",id,
@@ -99,8 +99,8 @@ app.get("/posts/:userId", async (req, res) => {
         )
       ) as postings
     FROM posts
-    GROUP BY user_id
-    ) post ON post.user_id = users.id
+    GROUP BY userId
+    ) post ON post.userId = users.id
     WHERE users.id = ${userId}
     )`
   );
@@ -117,14 +117,14 @@ app.delete("/posts/:postId", async (req, res) => {
 });
 
 app.post("/likes", async (req, res) => {
-  const { user_id, post_id } = req.body;
+  const { userId, postId } = req.body;
   await appDataSource.query(
     `INSERT INTO likes(
-      user_id
-      post_id
+      userId
+      postId
     ) VALUES (?, ?);
     `,
-    [user_id, post_id]
+    [userId, postId]
   );
   return res.status(201).json({ message: "likeCreated" });
 });
